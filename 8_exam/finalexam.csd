@@ -3,7 +3,7 @@
 <CsOptions>
 -odac -iadc
 -b32 -B2056
-;-t60 ;(denne må skrus på hvis du skal spille uten MIDI-fil)
+;-t60 ;(this must be uncommented if you are not reading score from a MIDI file.)
 -Ma
 -F 3_score.mid
 </CsOptions>
@@ -21,15 +21,15 @@ seed 0
 ;User Defined Opcodes (UDO)
 ;------------------------------------------------------------
 
-;Enkel chorus-effekt
+;Simple chorus effect.
 opcode chorus, aa, aakk
   aL, aR, kFreq, kDepth xin
 
-  ;LFO som modulerer delaytiden.
+  ;LFO modulates the delay time.
   aLFO lfo kDepth, kFreq
   aLFO += kDepth ;polarisering
 
-  ;variabel delay, legger til 25ms ekstra med delay pga fasing.
+  ;variable delay. add an extra 25ms of delay
   aOutL vdelay aL, aLFO+25, 100
   aOutR vdelay aR, aLFO+25, 100
 
@@ -40,12 +40,12 @@ endop
 opcode vocoders, aa, aaai
   aMod, aCarL, aCarR, iFFT xin
 
-  ;FFT analyse av alle input-signal
+  ;FFT analysis of all input signals
   fModAnalyze pvsanal aMod, iFFT, iFFT/4, iFFT*2, 1
   fCarLAnalyze pvsanal aCarL, iFFT, iFFT/4, iFFT*2, 1
   fCarRAnalyze pvsanal aCarR, iFFT, iFFT/4, iFFT*2, 1
 
-  ;Få amplituden fra modulator og kjører den gjennom frekvensene til carrier.
+  ;Get the amplitude from the modulator, and run it through the frequencies of the carrier.
   fVocL pvsvoc fModAnalyze, fCarLAnalyze, 1, 1
   fVocR pvsvoc fModAnalyze, fCarRAnalyze, 1, 1
 
@@ -59,15 +59,15 @@ endop
 ;Global Variables
 ;------------------------------------------------------------
 
-;Gjør det mulig å bytte mellom sagtann- eller firkantbølge
+;Make it possible to swap between square and sawtooth waveforms.
 giWaveform ftgen 0, 0, 0, -2, 0, 10
-;Laste lydfil inn i tabell
+;Load audio sample into function table.
 giAmen ftgen 0, 0, 0, 1, "amenbreak.wav", 0, 0, 1
 ;Hammond-like waveform
 giHammond ftgen 0, 0, 4096, 10, 1, 1/2, 1/3, 1/4, 1/6, 1/8, 1/10, 1/12, 1/16
 ;Default BPM to 60
 gkBPM init 60
-;Initialiserer variabel for glide.
+;Initialize the variable used for glide.
 gkOldCps init 0
 
 giScale = 1/5
@@ -81,8 +81,8 @@ massign 4, "Detune2"
 massign 5, "ArpSynth"
 massign 6, "Metronome"
 
-;Globale definisjoner for CC gjør det enklere å bytte ut CC-nummer
-;hvis man benytter seg en annen MIDI-kontroller.
+;Global definitions for CC makes it easier to change CC numbers
+;in the case you want to change MIDI controllers.
 
 giKeysChn     = 1   ;MIDI channel for keyboard
 giPadsChn     = 2   ;MIDI channel for pad
@@ -244,38 +244,38 @@ instr Detune
 
   **************************************/
 
-  ;Hent amplitude og tonehøyde fra MIDI
+  ;Get amplitude and pitch from MIDI
   iAmp ampmidi 1
   kCps cpsmidib 2
 
-  ;Legg til styring med MIDI CC
+  ;Add MIDI CC control
   kGetWave    ctrl7 giCtrlChn, giWaveCC, 0, 1.99
   kDetuneCtrl ctrl7 giKeysChn, giDetCC, 0, 2
 
-  ;Hent iMode-verdi fra tabell
+  ;Get iMode value from table
   kChangeMode table kGetWave, giWaveform
 
-  ;Enkel LFO
+  ;Simple LFO
   kVibAmount  ctrl7 giKeysChn, giVibCC, 0, 0.1
   kVib lfo kVibAmount, 6
 
-  ;Toggle-knapper for vibrato og LFO
+  ;Toggles for vibrato and LFO
   kEnableVib  ctrl7 giCtrlChn, giVibOnCC, 0, 1
   kEnableTrem ctrl7 giCtrlChn, giTremOnCC, 0, 1
 
-  ;Hvis vibrato er skrudd på, send til Cps.
+  ;If vibrato is enabled, send to Cps.
   if kEnableVib = 1 then
     kCps *= kVib+1
   endif
 
-  ;Hvis tremolo er skrudd på, send til Amp.
+  ;If tremolo is enabled, send to Amp.
   if kEnableTrem = 1 then
-    kTrem = 1-(kVib*10) ;få en verdi som faktisk gir mening som tremolo.
+    kTrem = 1-(kVib*10) ;produce a value that is worthwhile for tremolo.
   else
     kTrem = 1
   endif
 
-  ;Styring av detune-mengde. Distribuert både over under under tonesenteret.
+  ;Control detune amount. Detune is distributed both above and below tonal center.
   kDetuneUp1   = (kDetuneCtrl*0.04)+1
   kDetuneDown1 = (kDetuneCtrl*-0.04)+1
   kDetuneUp2   = (kDetuneCtrl*0.025)+1
@@ -283,7 +283,7 @@ instr Detune
   kDetuneUp3   = (kDetuneCtrl*0.01)+1
   kDetuneDown3 = (kDetuneCtrl*-0.01)+1
 
-  ;Tilfeldige tall for hver oscillator sin fasekontroll
+  ;Random number generators for each of the oscillator's phase.
   iRand1 random 0, 1
   iRand2 random 0, 1
   iRand3 random 0, 1
@@ -291,16 +291,16 @@ instr Detune
   iRand5 random 0, 1
   iRand6 random 0, 1
 
-  ;Amplitude kontroll
+  ;Amplitude control
   iAtk ctrl7 giPadsChn, giAtkCC, 0.001, 2
   iDec ctrl7 giPadsChn, giDecCC, 0.001, 2
   iSus ctrl7 giPadsChn, giSusCC, 0, 1
   iRel ctrl7 giPadsChn, giRelCC, 0.001, 2
 
-  ;ADSR-kurve
+  ;ADSR envelope
   aEnv madsr iAtk, iDec, iSus, iRel
 
-  ;Jevnt fordelt panorering.
+  ;Equal distribution of pan.
   iPan1 = 0
   iPan2 = 1
   iPan3 = 0.8
@@ -308,10 +308,10 @@ instr Detune
   iPan5 = 0.4
   iPan6 = 0.6
 
-  ;Skaler hver oscillator slik at ingen kan treffe 0dB.
+  ;Scale oscillators so that none peak at 0dB.
   iScale = 1/6
 
-  ;Tving oscillator til å renitialisere når man skifter iMode
+  ;Force oscillator to reinitialize when iMode updates.
   kUpdate changed kChangeMode
   if kUpdate = 1 then
     reinit REINIT_OSC
@@ -321,7 +321,7 @@ instr Detune
 
   iMode = i(kChangeMode)
 
-  ;Seks oscillatorer som kjører samtidig for å skape et fint teppe av lyd.
+  ;Six oscillators running simultaneously. Creates a large supersaw synth pad.
   aOsc1 vco2 iAmp*kTrem, kCps*kDetuneUp1, iMode, 0, iRand1
   aOsc1 *= iScale
   aOsc1L, aOsc1R pan2 aOsc1, iPan1
@@ -346,25 +346,25 @@ instr Detune
   aOsc6 *= iScale
   aOsc6L, aOsc6R pan2 aOsc6, iPan6
 
-  ;Summer alle oscillatorene.
+  ;Sum all the oscillators
   aOscL = aOsc1L+aOsc2L+aOsc3L+aOsc4L+aOsc5L+aOsc6L
   aOscR = aOsc1R+aOsc2R+aOsc3R+aOsc4R+aOsc5R+aOsc6R
 
-  ;Form volum etter ADSR-kurve.
+  ;Shape amplitude with ADSR envelope.
   aOscL *= aEnv
   aOscR *= aEnv
 
-  ;Filter kontroll
+  ;Filter controls
   iFilterAtk ctrl7 giPadsChn, giLPAtkCC, 0.001, 2
   iFilterDec ctrl7 giPadsChn, giLPDecCC, 0.001, 2
   iFilterAmp ctrl7 giCtrlChn, giLPAmpCC, 1, 100
   kCutCtrl   ctrl7 giCtrlChn, giLPSynthCC, 20, 20000
 
-  ;Filterkurve
+  ;Filter envelope
   kFilterEnv madsr iFilterAtk, iFilterDec, 0, iRel
   kCutFreq = kCutCtrl*((kFilterEnv*iFilterAmp)+1)
 
-  ;Sjekk at cutoff ikke bestiger 20kHz for å unngå problemer.
+  ;Make sure that the cutoff does NOT exceed 20kHz in order to avoid problems.
   if kCutFreq > 20000 then
     kCutFreq = 20000
   else
@@ -392,18 +392,18 @@ instr MultiFX
   aLeft  inleta "InLeft"
   aRight inleta "InRight"
 
-  ;MIDI CC kontroller
+  ;MIDI CC controls
   kChoFreq  ctrl7 giKeysChn, giChoFreqCC, 0.5, 10
   kChoDepth ctrl7 giKeysChn, giChoDeptCC, 0.1, 2
   kRevFeed ctrl7 giKeysChn, giRevFdbkCC, 0.1, 0.9
   kRevCut  ctrl7 giKeysChn, giRevCutCC, 20, 20000
 
-  ;Mix-kontroll for alle effektene
+  ;Mix controls for each effect.
   kChorVol ctrl7 giCtrlChn, giChoMixCC, 0, 1
   kRevVol  ctrl7 giCtrlChn, giRevMixCC, 0, 1
   kShimVol ctrl7 giCtrlChn, giShimMixCC, 0, 1
 
-  ;Chorus effekt med egen UDO
+  ;Chorus effect using UDO
   aChorusL, aChorusR chorus aLeft, aRight, kChoFreq, kChoDepth
   aChorusL *= kChorVol
   aChorusR *= kChorVol
@@ -413,7 +413,7 @@ instr MultiFX
   aReverbL *= kRevVol
   aReverbR *= kRevVol
 
-  ;"Shimmer" ved å doble frekvensen til reverbsignalet med FFT analyse
+  ;Create a "shimmer" effect by doubling the frequency of the reverb signal using FFT analysis
   iFFT = 1024
   fAnalyzeL pvsanal aReverbL, iFFT, iFFT/4, iFFT*2, 0
   fAnalyzeR pvsanal aReverbR, iFFT, iFFT/4, iFFT*2, 0
@@ -424,7 +424,7 @@ instr MultiFX
   aShimmerL pvsynth fShimmerL
   aShimmerR pvsynth fShimmerR
 
-  ;Litt tremolo på shimmer-effekten. To LFOer som kjører inni hverandre for å få mer variasjon.
+  ;Slight tremolo on the shimmer effect. Two LFOs modulate each other to create variations.
   iTremAmp = 0.2
   kMod  lfo 0.4, 0.5
   kMod *= 0.5
@@ -437,7 +437,7 @@ instr MultiFX
   aShimmerL *= kShimVol
   aShimmerR *= kShimVol
 
-  ;Summer alle effektene
+  ;Sum all the effects.
   aOutL = aChorusL+aReverbL+aShimmerL
   aOutR = aChorusR+aReverbR+aShimmerR
 
@@ -447,25 +447,25 @@ endin
 
 /**************************************
 
-Ekstra instrumenter som skal brukes
-til gjennomføring av musikalsk forløp.
+Additional instruments used in the
+musical piece.
 
 **************************************/
 
-;Sample-trigger med retrigger-funksjon
+;Sampler with retrigger
 instr Sampler
   iNote notnum
   iAmp ampmidi 1
 
-  ;Henter tempo fra score
+  ;Get tempo from score.
   kBPM miditempo
 
-  ;Hvor små skal hver sample cut være?
-  iCutLength = 8 ;En 8-del
+  ;Decide the size of each sample slice.
+  iCutLength = 8 ;Eight note
   kBeat = 60/kBPM
   kLength = kBeat*(4/iCutLength)
 
-  ;Akkurat denne biten funker ikke som bare en 8.-del.
+  ;This particular slice needs to be longer than an 8th.
   if iNote = 49 then
     kLength *= 2
   else
@@ -477,25 +477,25 @@ instr Sampler
   kTrig32 ctrl7 giPadsChn, giTrig32CC, 0, 1
 
   if kTrig16+kTrig24+kTrig32 > 1 then
-      ;Retrigger-limit på 0.2 sekund. Kun 3 instances om gangen.
+      ;Retrigger limit at 0.2 seconds. Max 3 instances at a time.
       schedkwhen 1, 0.2, 3, "AmenBreak", 0, kLength, iNote, iAmp, iCutLength
     elseif kTrig16 = 1 then
-      ;Retrigger-limit på en 16-del. Kun 1 instance.
+      ;Retrigger limit at 16th note intervals. Max 1 instance.
       schedkwhen 1, kBeat/4, 1, "AmenBreak", 0, kBeat/4, iNote, iAmp, iCutLength
     elseif kTrig24 = 1 then
-      ;Retrigger-limit på en 16-triol. Kun 1 instance.
+      ;Retrigger limit at 16th note tuplet intervals. Max 1 instance.
       schedkwhen 1, kBeat/6, 1, "AmenBreak", 0, kBeat/6, iNote, iAmp, iCutLength
     elseif kTrig32 = 1 then
-      ;Retrigger-limit på en 32-del. Kun 1 instance.
+      ;Retrigger limit at 32nd note intervals. Max 1 instance.
       schedkwhen 1, kBeat/8, 1, "AmenBreak", 0, kBeat/8, iNote, iAmp, iCutLength
     else
-      ;Retrigger-limit på 0.2 sekund. Kun 3 instances om gangen.
+      ;Retrigger limit at 0.2 seconds. Max 3 instances at a time.
       schedkwhen 1, 0.2, 3, "AmenBreak", 0, kLength, iNote, iAmp, iCutLength
   endif
 
 endin
 
-;Sampler Modul for Amen Break
+;Sampler module for Amen Break
 instr AmenBreak
   iNote = p4
   iAmp = p5
@@ -503,23 +503,23 @@ instr AmenBreak
   iLength = ftlen(giAmen)
   aEnv madsr 0.0001, 0.0001, 1, 0.01
 
-  ;Hvor mange slag er det i fila?
+  ;How many 4th notes are there in the file/loop?
   iBeats = 16
 
-  ;Få target tempo fra score eller MIDI.
+  ;Get target tempo from score/MIDI.
   kBPM miditempo
 
-  ;Finner ut hvor mange cuts det blir totalt med de gitte instillingene.
+  ;Calculates the amount of slices there will be, given the current parameters.
   iCuts = iBeats/(4/iCutLength)
 
-  ;Finn lengde på 1 beat i sec, deretter konverter til samples,
-  ;for så å gange med antall beats i hele samplen.
+  ;Calculate how long a 4th note is in seconds, then convert that time to samples,
+  ;and finally multiply that with the amount of 4th notes there are in the loop.
   kNewLength = ((60/kBPM)*sr)*iBeats
 
-  ;Frekvens justert etter tempo
+  ;Frequency adjusted to tempo
   kCps = sr/kNewLength
 
-  ;Sjekk notenummer og velg riktig slice henholdsvis.
+  ;Check MIDI note number and select the correct slice.
   if iNote = 36 then
       iStart = 8/iCuts
     elseif iNote = 37 then
@@ -555,13 +555,13 @@ instr AmenBreak
     else goto SKIP_SAMPLE
   endif
 
-  ;Printer en advarsel og skipper playback hvis det skulle være nødvendig.
+  ;Print warning and skip playback, if necessary.
   if iStart >= 1 then
     prints "WARNING: Sample start value %d exceeds or is equal the total amount of cuts, which is %d\n", iCuts*iStart, iCuts
     goto SKIP_SAMPLE
   endif
 
-  ;Iterer gjennom tabellen basert på Cps fra target tempo.
+  ;Iterate through the table at the speed of Cps of the target tempo.
   aPlay phasor kCps, iStart
   aSample table aPlay*iLength, giAmen
   aSample *= iAmp
@@ -573,7 +573,7 @@ instr AmenBreak
   kCutoff ctrl7 giPadsChn, giBrkCutCC, 0.001, 1
   kReso   ctrl7 giPadsChn, giBrkResCC, 0, 0.8
 
-  ;Mekker en eksponensiell kurve for filter cutoff, for litt mer naturlig skalering.
+  ;Exponential curve for filter cutoff, for more natural scaling.
   kCurved expcurve kCutoff, 8
   kCurved *= 20000
 
@@ -586,7 +586,7 @@ instr AmenBreak
   outleta "OutRight", aOut
 endin
 
-;Enkel reverb til breakbeat-trommene.
+;Simple reverb for the breakbeats.
 instr BreakVerb
   aL inleta "InLeft"
   aR inleta "InRight"
@@ -603,23 +603,23 @@ instr BreakVerb
   outleta "OutRight", aRevR
 endin
 
-;Harmonizer for vokal
+;Harmonizer for vocals (CODE NOT OPERATING AS INTENDED)
 instr Harmonizer
   aIn inleta "Input"
 
   kCps cpsmidib 2
 
-  ;FFT-analyse for å repitche etterpå
+  ;FFT analysis to repitch
   iFFT = 1024
   fAnalyze pvsanal aIn, iFFT, iFFT/4, iFFT*2, 0
 
-  ;Analyser input pitch og finn faktor for å få target pitch.
+  ;Analyses input pitch and calculates the factor to reach target pitch.
   kPitch, kAmp pitchamdf aIn, 20, 2000
-  if kPitch = 0 goto SKIP_HARMONIZER ;unngå divide by zero error.
-  kCps /= kPitch ;Få repitching-faktor.
+  if kPitch = 0 goto SKIP_HARMONIZER ;avoid divide by zero error.
+  kCps /= kPitch ;Get repitching factor.
   ;printk 0.1, kCps
 
-  ;Skaler til den nye tonen.
+  ;Scale to the new pitch.
   fScale pvscale fAnalyze, kCps
 
   aOut pvsynth fScale
@@ -631,40 +631,32 @@ instr Harmonizer
   outleta "Output", aOut
 endin
 
-;Samme som forrige Detune, men denne routes gjennom vocoderen.
+;Same as previous detune: this one is being used as the vocoder carrier.
 instr Detune2
-  ;Hent amplitude og tonehøyde fra MIDI
   iAmp ampmidi 1
   kCps cpsmidib 2
 
-  ;Legg til styring med MIDI CC
   kGetWave    ctrl7 giCtrlChn, giWaveCC, 0, 1.99
   kDetuneCtrl ctrl7 giKeysChn, giDetCC, 0, 2
 
-  ;Hent iMode-verdi fra tabell
   kChangeMode table kGetWave, giWaveform
 
-  ;Enkel LFO
   kVibAmount  ctrl7 giKeysChn, giVibCC, 0, 0.1
   kVib lfo kVibAmount, 6
 
-  ;Toggle-knapper for vibrato og LFO
   kEnableVib  ctrl7 giCtrlChn, giVibOnCC, 0, 1
   kEnableTrem ctrl7 giCtrlChn, giTremOnCC, 0, 1
 
-  ;Hvis vibrato er skrudd på, send til Cps.
   if kEnableVib = 1 then
     kCps *= kVib+1
   endif
 
-  ;Hvis tremolo er skrudd på, send til Amp.
   if kEnableTrem = 1 then
-    kTrem = 1-(kVib*10) ;få en verdi som faktisk gir mening som tremolo.
+    kTrem = 1-(kVib*10)
   else
     kTrem = 1
   endif
 
-  ;Styring av detune-mengde. Distribuert både over under under tonesenteret.
   kDetuneUp1   = (kDetuneCtrl*0.04)+1
   kDetuneDown1 = (kDetuneCtrl*-0.04)+1
   kDetuneUp2   = (kDetuneCtrl*0.025)+1
@@ -672,7 +664,6 @@ instr Detune2
   kDetuneUp3   = (kDetuneCtrl*0.01)+1
   kDetuneDown3 = (kDetuneCtrl*-0.01)+1
 
-  ;Tilfeldige tall for hver oscillator sin fasekontroll
   iRand1 random 0, 1
   iRand2 random 0, 1
   iRand3 random 0, 1
@@ -680,16 +671,13 @@ instr Detune2
   iRand5 random 0, 1
   iRand6 random 0, 1
 
-  ;Amplitude kontroll
   iAtk ctrl7 giPadsChn, giAtkCC, 0.001, 2
   iDec ctrl7 giPadsChn, giDecCC, 0.001, 2
   iSus ctrl7 giPadsChn, giSusCC, 0, 1
   iRel ctrl7 giPadsChn, giRelCC, 0.001, 2
-
-  ;ADSR-kurve
+  
   aEnv madsr iAtk, iDec, iSus, iRel
 
-  ;Jevnt fordelt panorering.
   iPan1 = 0
   iPan2 = 1
   iPan3 = 0.8
@@ -697,10 +685,8 @@ instr Detune2
   iPan5 = 0.4
   iPan6 = 0.6
 
-  ;Skaler hver oscillator slik at ingen kan treffe 0dB.
   iScale = 1/6
 
-  ;Tving oscillator til å renitialisere når man skifter iMode
   kUpdate changed kChangeMode
   if kUpdate = 1 then
     reinit REINIT_OSC
@@ -710,7 +696,6 @@ instr Detune2
 
   iMode = i(kChangeMode)
 
-  ;Seks oscillatorer som kjører samtidig for å skape et fint teppe av lyd.
   aOsc1 vco2 iAmp*kTrem, kCps*kDetuneUp1, iMode, 0, iRand1
   aOsc1 *= iScale
   aOsc1L, aOsc1R pan2 aOsc1, iPan1
@@ -735,32 +720,26 @@ instr Detune2
   aOsc6 *= iScale
   aOsc6L, aOsc6R pan2 aOsc6, iPan6
 
-  ;Summer alle oscillatorene.
   aOscL = aOsc1L+aOsc2L+aOsc3L+aOsc4L+aOsc5L+aOsc6L
   aOscR = aOsc1R+aOsc2R+aOsc3R+aOsc4R+aOsc5R+aOsc6R
 
-  ;Form volum etter ADSR-kurve.
   aOscL *= aEnv
   aOscR *= aEnv
 
-  ;Filter kontroll
   iFilterAtk ctrl7 giPadsChn, giLPAtkCC, 0.001, 2
   iFilterDec ctrl7 giPadsChn, giLPDecCC, 0.001, 2
   iFilterAmp ctrl7 giCtrlChn, giLPAmpCC, 1, 100
   kCutCtrl   ctrl7 giCtrlChn, giLPSynthCC, 20, 20000
 
-  ;Filterkurve
   kFilterEnv madsr iFilterAtk, iFilterDec, 0, iRel
   kCutFreq = kCutCtrl*((kFilterEnv*iFilterAmp)+1)
 
-  ;Sjekk at cutoff ikke bestiger 20kHz for å unngå problemer.
   if kCutFreq > 20000 then
     kCutFreq = 20000
   else
     kCutFreq = kCutFreq
   endif
 
-  ;Filter
   aOutL moogladder aOscL, kCutFreq, 0.3
   aOutR moogladder aOscR, kCutFreq, 0.3
 
@@ -771,52 +750,52 @@ instr Detune2
   outleta "OutRight", aOutR
 endin
 
-;Channel vocoder med stereo output
+;Channel vocoder with stereo output
 instr Vocoder
   aMod  inleta "Modulator"
   aCarL inleta "CarrierLeft"
   aCarR inleta "CarrierRight"
 
-  ;Analyser alle input-signalene
+  ;Analyze all input signals
   iFFT = 256
 
-  ;Bruker egen stereo-vocoder UDO.
+  ;Use stereo vocoder UDO.
   aOutL, aOutR vocoders aMod, aCarL, aCarR, iFFT
 
   outleta "OutLeft",  aOutL
   outleta "OutRight", aOutR
 endin
 
-;MIDI-trigga freeze-effekt.
+;MIDI triggered freeze effect.
 instr Freeze
   aL inleta "InLeft"
   aR inleta "InRight"
 
-  ;Bruk en MIDI CC-knapp for å aktivere freeze.
+  ;Use MIDI CC button to activate freeze.
   kEnable ctrl7 giPadsChn, giFreezeCC, 0, 1
 
   iFFT = 1024
   fAnalyzeL pvsanal aL, iFFT, iFFT/4, iFFT*2, 0
   fAnalyzeR pvsanal aR, iFFT, iFFT/4, iFFT*2, 0
 
-  ;Frys amplitude og pitch
+  ;Freeze amplitude and pitch
   fFreezeL pvsfreeze fAnalyzeL, kEnable, kEnable
   fFreezeR pvsfreeze fAnalyzeR, kEnable, kEnable
 
   aResynthL pvsynth fFreezeL
   aResynthR pvsynth fFreezeR
 
-  ;Filterkontroll
+  ;Filter control
   kCutoff ctrl7 giPadsChn, giLPFreezeCC, 0.001, 1
 
-  ;Mekker en eksponensiell kurve for filter cutoff, for litt mer naturlig skalering.
+  ;Exponential curve for filter cutoff
   kCurved expcurve kCutoff, 8
   kCurved *= 20000
 
   aOutL moogladder aResynthL, kCurved, 0.1
   aOutR moogladder aResynthR, kCurved, 0.1
 
-  ;Kjør lyden som vanlig når den ikke er skrudd på for å gjengi riktig lyd.
+  ;If freeze is not enabled, just output the clean signal.
   if kEnable = 0 then
     aOutL = aL
     aOutR = aR
@@ -829,14 +808,14 @@ endin
 ;MIDI Arpeggiator
 instr Arpeggio
   kRate ctrl7 giKeysChn, giArpRateCC, 1, 20
-  kNote, kTrigger midiarp kRate, 3 ;Tilfeldig rekkefølge på arpeggio.
+  kNote, kTrigger midiarp kRate, 3 ;Random order on arpeggiated notes.
 
   kCps = cpsmidinn(kNote)
 
-  ;i-event varer like lenge som arp-rate.
+  ;i-event has same duration as the arp rate.
   kDur = 1/kRate
 
-  ;Trigger arpeggio-synthen.
+  ;Trigger arpeggio synth.
   if kTrigger = 1 then
     event "i", "ArpSynth", 0, kDur, kCps
   endif
@@ -844,20 +823,20 @@ instr Arpeggio
   SKIP:
 endin
 
-;Arpeggio synth med glide mellom hver note
+;Arpeggio synth with glide between each note
 instr ArpSynth
 
   iInCps cpsmidi
   iAmp ampmidi 1
 
-  ;Unngå ekkel glide på første tone som spilles
+  ;Avoid glide from 0 Hz on the first note that's played
   if gkOldCps = 0 then
     gkOldCps = iInCps
     reinit GLIDE
   endif
 
   GLIDE:
-  ;Tegner en linje mellom forrige pitch og ny pitch.
+  ;Draw a line from previous pitch to the new pitch.
   kCps linseg i(gkOldCps), 0.01, iInCps
 
   iPhase1 random 0, 1
@@ -881,7 +860,7 @@ instr ArpSynth
   aOut moogladder aOsc, kCurved, 0.4
   aOut *= giScale
 
-  ;Lagre nåværende pitch som gammel pitch
+  ;Store current pitch as previous pitch
   gkOldCps = kCps
 
   outleta "Output",  aOut
@@ -900,22 +879,22 @@ instr ArpReverb
   outleta "OutRight", aRevR
 endin
 
-;Enkel line/mic input
+;Simple line/mic input
 instr Microphone
   aIn inch 1
   outleta "Output", aIn
 endin
 
-;Egen tempoklokke, slik at instrumenter kan hente BPM fra score. (Nyttig hvis man skal teste fra score.)
+;Custom tempo clock, so that instruments can get BPM fra Csound score. (Useful if you need to test from score.)
 instr BPM
   iBPM = p4
-  tempo p4, 60 ;Sett tempo
+  tempo p4, 60 ;Set tempo using p-field.
 
-  ;Print det nye tempoet til terminalen.
+  ;Print the new tempo to console.
   prints "Current BPM: %d\n", iBPM
 endin
 
-;Metronom som ikke går til master
+;Metronome sound that does not reach the master channel.
 instr Metronome
   iCps cpsmidi
   aEnv madsr 0.001, 0.1, 0, 0.001
@@ -930,10 +909,10 @@ instr Master
   aLeft  inleta "InLeft"
   aRight inleta "InRight"
 
-  ;Lyd ut til høyttalere
+  ;Send audio to output
   outs aLeft, aRight
 
-  ;Skriv WAV-fil til disk.
+  ;Write audio to disk.
   fout "render.wav", 14, aLeft, aRight
 endin
 
